@@ -1,0 +1,9 @@
+.git
+.github
+.codex
+openspec
+.env
+*.out
+*.test
+coverage.*
+README.md
