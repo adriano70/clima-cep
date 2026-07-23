@@ -28,6 +28,7 @@ func NewHandler(service WeatherService, logger *slog.Logger) http.Handler {
 
 	h := &Handler{service: service, logger: logger}
 	mux := http.NewServeMux()
+	mux.HandleFunc("/health", h.health)
 	mux.HandleFunc("/healthz", h.health)
 	mux.HandleFunc("/weather/", h.weather)
 	return mux

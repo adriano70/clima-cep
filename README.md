@@ -3,9 +3,9 @@
 API HTTP em Go que recebe um CEP brasileiro, localiza a cidade pelo [ViaCEP](https://viacep.com.br/) e consulta a temperatura atual na [WeatherAPI](https://www.weatherapi.com/). A resposta contém Celsius, Fahrenheit e Kelvin.
 
 - Repositório: <https://github.com/adriano70/clima-cep>
-- URL no Cloud Run: **pendente de publicação no projeto GCP do proprietário**
-
-> A URL pública deve substituir a indicação acima depois da implantação descrita neste README. Nenhuma URL foi inventada, pois este repositório local não fornece por si só um projeto ou credenciais do Google Cloud.
+- URL no Cloud Run: <https://clima-cep-747741575647.southamerica-east1.run.app>
+- Projeto GCP: `gen-lang-client-0004403156`
+- Região: `southamerica-east1`
 
 ## Contrato HTTP
 
@@ -39,7 +39,7 @@ O serviço aceita somente oito dígitos ASCII, sem hífen ou espaços.
 | CEP válido, mas inexistente | `404` | `can not find zipcode` |
 | ViaCEP ou WeatherAPI indisponível | `502` | `não foi possível consultar o clima` |
 
-O ponto de acesso `GET /healthz` retorna `200 ok` e pode ser usado como verificação de saúde.
+O ponto de acesso `GET /health` retorna `200 ok` e pode ser usado como verificação de saúde. A rota `/healthz` também está disponível localmente por compatibilidade, mas `/health` deve ser usada na URL pública do Cloud Run.
 
 As conversões usadas são `F = C × 1,8 + 32` e `K = C + 273,15`. O deslocamento de `273,15` é a conversão física e corresponde ao exemplo do desafio (`28,5 °C = 301,65 K`).
 
@@ -87,7 +87,7 @@ docker run --rm \
 Em outro terminal:
 
 ```bash
-curl http://localhost:8080/healthz
+curl http://localhost:8080/health
 curl http://localhost:8080/weather/01001000
 ```
 
@@ -116,7 +116,7 @@ gcloud run services describe clima-cep \
   --format='value(status.url)'
 ```
 
-Copie essa URL para o campo **URL no Cloud Run** no início deste README. Para produção, prefira armazenar `WEATHER_API_KEY` no Gerenciador de Segredos e vinculá-la ao serviço em vez de passá-la diretamente na linha de comando.
+Para produção, prefira armazenar `WEATHER_API_KEY` no Gerenciador de Segredos e vinculá-la ao serviço em vez de passá-la diretamente na linha de comando.
 
 ## Estrutura
 
@@ -127,4 +127,92 @@ internal/httpapi/       rotas e contrato HTTP
 internal/viacep/        cliente de localização
 internal/weather/       regras de domínio e conversões
 internal/weatherapi/    cliente de temperatura atual
+```
+
+## Exemplos de requisições à URL pública
+
+A aplicação está disponível em:
+
+```text
+https://clima-cep-747741575647.southamerica-east1.run.app
+```
+
+Para facilitar os testes, defina a URL em uma variável:
+
+```bash
+SERVICE_URL="https://clima-cep-747741575647.southamerica-east1.run.app"
+```
+
+### Verificar a saúde
+
+```bash
+curl -i "$SERVICE_URL/health"
+```
+
+Resposta esperada:
+
+```http
+HTTP/2 200
+
+ok
+```
+
+### Consultar um CEP válido
+
+```bash
+curl -i "$SERVICE_URL/weather/01001000"
+```
+
+Resposta esperada:
+
+```http
+HTTP/2 200
+Content-Type: application/json; charset=utf-8
+
+{"temp_C":19.3,"temp_F":66.74,"temp_K":292.45}
+```
+
+As temperaturas variam conforme as condições meteorológicas no momento da consulta.
+
+### Consultar um CEP inexistente
+
+```bash
+curl -i "$SERVICE_URL/weather/99999999"
+```
+
+Resposta esperada:
+
+```http
+HTTP/2 404
+
+can not find zipcode
+```
+
+### Consultar um CEP em formato inválido
+
+```bash
+curl -i "$SERVICE_URL/weather/01001-000"
+```
+
+Resposta esperada:
+
+```http
+HTTP/2 422
+
+invalid zipcode
+```
+
+### Usar um método não permitido
+
+```bash
+curl -i -X POST "$SERVICE_URL/weather/01001000"
+```
+
+Resposta esperada:
+
+```http
+HTTP/2 405
+Allow: GET
+
+método não permitido
 ```

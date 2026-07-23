@@ -108,9 +108,11 @@ func TestSaudeECaminhoDesconhecido(t *testing.T) {
 	t.Parallel()
 
 	handler := NewHandler(&serviceStub{}, discardLogger())
-	health := request(t, handler, http.MethodGet, "/healthz")
-	if health.Code != http.StatusOK || health.Body.String() != "ok" {
-		t.Fatalf("resposta de saúde = %d %q, esperada 200 ok", health.Code, health.Body.String())
+	for _, path := range []string{"/health", "/healthz"} {
+		health := request(t, handler, http.MethodGet, path)
+		if health.Code != http.StatusOK || health.Body.String() != "ok" {
+			t.Fatalf("resposta de saúde em %s = %d %q, esperada 200 ok", path, health.Code, health.Body.String())
+		}
 	}
 
 	unknown := request(t, handler, http.MethodGet, "/unknown")
