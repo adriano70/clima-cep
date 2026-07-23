@@ -68,6 +68,18 @@ func TestConverterTemperatura(t *testing.T) {
 	assertFloat(t, got.Kelvin, 301.65)
 }
 
+func TestConverterTemperaturaArredondaConversoes(t *testing.T) {
+	t.Parallel()
+
+	got := ConvertTemperature(21.2)
+	if got.Fahrenheit != 70.16 {
+		t.Fatalf("Fahrenheit = %v, esperado 70.16", got.Fahrenheit)
+	}
+	if got.Kelvin != 294.35 {
+		t.Fatalf("Kelvin = %v, esperado 294.35", got.Kelvin)
+	}
+}
+
 func TestServicoPorCEP(t *testing.T) {
 	t.Parallel()
 

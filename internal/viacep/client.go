@@ -1,6 +1,7 @@
 package viacep
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -59,9 +60,9 @@ func (c *Client) FindLocation(ctx context.Context, zipcode string) (weather.Loca
 	}
 
 	var payload struct {
-		City  string `json:"localidade"`
-		State string `json:"uf"`
-		Error bool   `json:"erro"`
+		City  string       `json:"localidade"`
+		State string       `json:"uf"`
+		Error flexibleBool `json:"erro"`
 	}
 	decoder := json.NewDecoder(io.LimitReader(resp.Body, 1<<20))
 	if err := decoder.Decode(&payload); err != nil {
@@ -75,4 +76,19 @@ func (c *Client) FindLocation(ctx context.Context, zipcode string) (weather.Loca
 	}
 
 	return weather.Location{City: payload.City, State: payload.State}, nil
+}
+
+type flexibleBool bool
+
+func (b *flexibleBool) UnmarshalJSON(data []byte) error {
+	switch string(bytes.TrimSpace(data)) {
+	case "true", `"true"`:
+		*b = true
+	case "false", `"false"`:
+		*b = false
+	default:
+		return fmt.Errorf("valor booleano inválido")
+	}
+
+	return nil
 }

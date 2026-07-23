@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 )
 
 var (
@@ -75,7 +76,11 @@ func ValidZipcode(zipcode string) bool {
 func ConvertTemperature(celsius float64) Temperature {
 	return Temperature{
 		Celsius:    celsius,
-		Fahrenheit: celsius*1.8 + 32,
-		Kelvin:     celsius + 273.15,
+		Fahrenheit: roundToTwoDecimalPlaces(celsius*1.8 + 32),
+		Kelvin:     roundToTwoDecimalPlaces(celsius + 273.15),
 	}
+}
+
+func roundToTwoDecimalPlaces(value float64) float64 {
+	return math.Round(value*100) / 100
 }

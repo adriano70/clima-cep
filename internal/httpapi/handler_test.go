@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/adriano70/clima-cep/internal/weather"
@@ -17,6 +18,18 @@ type serviceStub struct {
 	result  weather.Temperature
 	err     error
 	zipcode string
+}
+
+func TestManipuladorSerializaTemperaturasSemResiduoDePontoFlutuante(t *testing.T) {
+	t.Parallel()
+
+	service := &serviceStub{result: weather.ConvertTemperature(21.2)}
+	recorder := request(t, NewHandler(service, discardLogger()), http.MethodGet, "/weather/01001000")
+
+	const want = `{"temp_C":21.2,"temp_F":70.16,"temp_K":294.35}`
+	if got := strings.TrimSpace(recorder.Body.String()); got != want {
+		t.Fatalf("resposta = %s, esperada %s", got, want)
+	}
 }
 
 func (s *serviceStub) ByZipcode(_ context.Context, zipcode string) (weather.Temperature, error) {

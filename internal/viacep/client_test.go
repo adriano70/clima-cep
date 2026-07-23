@@ -35,14 +35,21 @@ func TestLocalizarCidade(t *testing.T) {
 func TestCidadeNaoEncontrada(t *testing.T) {
 	t.Parallel()
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = w.Write([]byte(`{"erro":true}`))
-	}))
-	defer server.Close()
+	for _, body := range []string{`{"erro":true}`, `{"erro":"true"}`} {
+		body := body
+		t.Run(body, func(t *testing.T) {
+			t.Parallel()
 
-	_, err := NewClient(server.Client(), server.URL).FindLocation(context.Background(), "99999999")
-	if !errors.Is(err, weather.ErrZipcodeNotFound) {
-		t.Fatalf("FindLocation() retornou erro = %v, esperado ErrZipcodeNotFound", err)
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = w.Write([]byte(body))
+			}))
+			defer server.Close()
+
+			_, err := NewClient(server.Client(), server.URL).FindLocation(context.Background(), "99999999")
+			if !errors.Is(err, weather.ErrZipcodeNotFound) {
+				t.Fatalf("FindLocation() retornou erro = %v, esperado ErrZipcodeNotFound", err)
+			}
+		})
 	}
 }
 
@@ -56,6 +63,7 @@ func TestErrosDoServicoExternoAoLocalizarCidade(t *testing.T) {
 	}{
 		{name: "status do servidor", status: http.StatusServiceUnavailable, body: `{}`},
 		{name: "JSON malformado", status: http.StatusOK, body: `{`},
+		{name: "campo erro inválido", status: http.StatusOK, body: `{"erro":1}`},
 		{name: "cidade ausente", status: http.StatusOK, body: `{"uf":"SP"}`},
 	}
 
